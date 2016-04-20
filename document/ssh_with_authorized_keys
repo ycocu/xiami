@@ -7,7 +7,6 @@ Such as there have two hosts A(192.168.11.46) and B(192.168.10.132), we assume l
 5. "cd ~/.ssh" and "cat id_dsa.pub >> ~/.ssh/authorized_keys"
 
 
-
 Tips
 
 make sure the privilege of authorized_keys is 644 on host B, otherwise, still need to type password.
@@ -15,7 +14,6 @@ make sure the privilege of authorized_keys is 644 on host B, otherwise, still ne
 
 
 output example:
-
 ➜  ~ ssh joeyyu@192.168.10.132
 Last login: Wed Apr 20 16:18:31 2016 from 192.168.11.46
 [joeyyu@localhost ~]$ 
