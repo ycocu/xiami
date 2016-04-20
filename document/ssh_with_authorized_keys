@@ -1,0 +1,21 @@
+Such as there have two hosts A(192.168.11.46) and B(192.168.10.132), we assume login B from A without password, we can follow below steps
+
+1. login A 
+2. generate the rsa/dsa public key by "ssh-keygen -t [rsa|dsa]"
+3. cd ~/.ssh/ and copy id_rsa.pub or id_dsa.pub to B
+4. login B
+5. "cd ~/.ssh" and "cat id_dsa.pub >> ~/.ssh/authorized_keys"
+
+
+
+Tips
+
+make sure the priviledge of authorized_keys is 644 on host B, otherwise, still need to type password.
+
+
+
+output example:
+
+➜  ~ ssh joeyyu@192.168.10.132
+Last login: Wed Apr 20 16:18:31 2016 from 192.168.11.46
+[joeyyu@localhost ~]$ 
