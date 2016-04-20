@@ -10,7 +10,7 @@ Such as there have two hosts A(192.168.11.46) and B(192.168.10.132), we assume l
 
 Tips
 
-make sure the priviledge of authorized_keys is 644 on host B, otherwise, still need to type password.
+make sure the privilege of authorized_keys is 644 on host B, otherwise, still need to type password.
 
 
 
