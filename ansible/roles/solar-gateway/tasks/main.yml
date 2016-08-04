@@ -1,0 +1,65 @@
+---
+
+- name: sysctl | Make sure the ip_forward is enabled
+  sysctl:
+    name: net.ipv4.ip_forward
+    value: 1
+    sysctl_set: yes
+  tags:
+    - sysctl
+
+- name: unbound | Make sure DNS server is installed
+  apt: name=unbound
+  tags:
+    - unbound
+
+- name: unbound | Make sure DNS server configuration directory existing
+  file:
+    path: "{{ unbound_conf_root }}/conf.d"
+    state: directory
+    mode: 755
+  tags:
+    - unbound
+
+- name: unbound | Make sure DNS server is configured
+  template:
+    src: "unbound/conf.d/{{ item }}.j2"
+    dest: "{{ unbound_conf_root }}/conf.d/{{ item }}"
+  with_items: unbound_conf_list
+  notify: restart unbound
+  tags:
+    - unbound
+
+- name: unbound | Make sure DNS server is ready
+  template:
+    src: "unbound/{{ item }}.j2"
+    dest: "{{ unbound_conf_root }}/{{ item }}"
+    validate: "/usr/sbin/unbound-checkconf %s"
+  with_items:
+    - unbound.conf
+  notify: restart unbound
+  tags:
+    - unbound
+
+- name: unbound | Make sure DNS server is running
+  service:
+    name: unbound
+    state: started
+  tags:
+    - unbound
+
+- name: haproxy | Make sure HAProxy is installed
+  apt:
+    name: haproxy
+    state: present
+  tags:
+    - haproxy
+
+- name: haproxy | Make sure HAProxy is configured
+  template:
+    src: "haproxy/haproxy.cfg.j2"
+    dest: "/etc/haproxy/haproxy.cfg"
+    validate: "/usr/sbin/haproxy -f %s -c"
+  notify: restart haproxy
+  tags:
+    - haproxy

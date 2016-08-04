@@ -1,0 +1,201 @@
+---
+
+- name: certs | Deliver private keys
+  copy:
+    src: "certs/{{ item.name }}"
+    dest: "/etc/ssl/{{ item.type }}/{{ item.name }}"
+    group: solar
+    mode: u=rw,g=r,o=
+  with_items: deployment_keys
+  tags:
+    - certs
+
+- name: certs | Setup private key directories
+  file:
+    path: /etc/ssl/private
+    mode: u=rwx,g=rx,o=x
+  tags:
+    - certs
+
+- name: deployment | Make sure the deployment user present
+  user:
+    name: solar
+    createhome: no
+    home: "{{ deployment_root }}"
+    generate_ssh_key: yes
+    comment: "Application Deployment"
+  tags:
+    - certs
+
+- name: deployment | Make sure virtualenvs present
+  shell: |
+    PYTHON={{ pyenv_root }}/versions/{{ item.python_version }}/bin/python
+    virtualenv -p $PYTHON ./{{ item.name }}
+    ./{{ item.name }}/bin/pip install -U pip
+    ./{{ item.name }}/bin/pip install -U setuptools
+  args:
+    chdir: "{{ deployment_root }}"
+    creates: "{{ deployment_root }}/{{ item.name }}"
+  with_items: deployment_apps
+  tags:
+    - deployment
+
+- name: deployment | Deploy application type=dist latest
+  pip:
+    name: "{{ item.args.name | default(item.name) }}"
+    virtualenv: "{{ deployment_root }}/{{ item.name }}"
+    extra_args: "{{ item.args.pip_extra_args | default('') | join(' ') }}"
+    state: latest
+  when: item.type == 'dist' and item.version is not defined
+  with_items: deployment_apps
+  register: deployment_report_for_dist
+  tags:
+    - deployment
+
+- name: deployment | Deploy application type=dist with version
+  pip:
+    name: "{{ item.args.name | default(item.name) }}"
+    virtualenv: "{{ deployment_root }}/{{ item.name }}"
+    extra_args: "{{ item.args.pip_extra_args | default('') | join(' ') }}"
+    version: "{{ item.version }}"
+  when: item.type == 'dist' and item.version is defined
+  with_items: deployment_apps
+  register: deployment_report_for_dist_v
+  tags:
+    - deployment
+
+- name: deployment | Deploy application type=git
+  git:
+    repo: "{{ item.args.git_repo }}"
+    dest: "{{ deployment_root }}/{{ item.name }}/src"
+    depth: 20
+    accept_hostkey: yes
+    key_file: "{{ deployment_root }}/.ssh/id_rsa"
+  when: item.type == 'git'
+  with_items: deployment_apps
+  register: deployment_report_for_git
+  tags:
+    - deployment
+
+- name: deployment | Install dependencies of application type=git
+  pip:
+    requirements: "{{ deployment_root }}/{{ item.name }}/src/requirements.txt"
+    virtualenv: "{{ deployment_root }}/{{ item.name }}"
+    extra_args: "{{ item.args.pip_extra_args | default('') | join(' ') }}"
+    state: latest
+  when: item.type == 'git'
+  with_items: deployment_apps
+  tags:
+    - deployment
+
+- name: deployment | Configure environment variables of application
+  copy:
+    src: "config/{{ item.name }}.sh"
+    dest: "/etc/default/solar-{{ item.name }}"
+    group: solar
+    mode: u=rw,g=r,o=
+  with_items: deployment_apps
+  tags:
+    - deployment
+
+- name: deployment | Configure init-script files of application
+  template:
+    src: init-script
+    dest: "/etc/init.d/{{ item.1.name }}"
+    mode: u=rwx,g=rx,o=rx
+  when: item.1.sticky is not defined or item.1.sticky == inventory_hostname
+  with_subelements:
+    - deployment_apps
+    - services
+  tags:
+    - deployment
+
+- name: deployment | Make sure changed services are restarted
+  service: name={{ item.name }} state=restarted
+  when: item.sticky is not defined or item.sticky == inventory_hostname
+  with_flattened:
+    - "{{ deployment_report_for_dist.results | selectattr('changed', 'equalto', True) | map(attribute='item') | map(attribute='services') | list }}"
+    - "{{ deployment_report_for_dist_v.results | selectattr('changed', 'equalto', True) | map(attribute='item') | map(attribute='services') | list }}"
+    - "{{ deployment_report_for_git.results | selectattr('changed', 'equalto', True) | map(attribute='item') | map(attribute='services') | list }}"
+  register: deployment_restarted
+  tags:
+    - deployment
+
+- name: deployment | Make sure the deployment triggers are executed
+  become: yes
+  become_user: solar
+  shell: |
+    . /etc/default/solar-{{ item.name }}
+    . /srv/{{ item.name }}/bin/activate
+    [ "{{ item.type }}" = "git" ] && cd "/srv/{{ item.name }}/src" || true
+    {{ item.trigger }}
+  when: item.trigger_sticky is not defined or item.trigger_sticky == inventory_hostname
+  with_flattened:
+    - "{{ deployment_report_for_dist.results | selectattr('changed', 'equalto', True) | map(attribute='item') | selectattr('trigger', 'defined') | list }}"
+    - "{{ deployment_report_for_dist_v.results | selectattr('changed', 'equalto', True) | map(attribute='item') | selectattr('trigger', 'defined') | list }}"
+    - "{{ deployment_report_for_git.results | selectattr('changed', 'equalto', True) | map(attribute='item') | selectattr('trigger', 'defined') | list }}"
+  register: deployment_report_for_trigger
+  tags:
+    - deployment
+
+- name: deployment | Make sure services are running
+  service: name={{ item.1.name }} state=started
+  when: item.1.sticky is not defined or item.1.sticky == inventory_hostname
+  with_subelements:
+    - deployment_apps
+    - services
+  tags:
+    - deployment
+
+- name: deployment | Send notification for deployment type=dist
+  no_log: yes
+  bearychat:
+    url: "{{ bearychat_webhook_url }}"
+    text: ":thought_balloon: **部署通告** :point_left: {{ local_user }}"
+    attachments:
+      - title: "{{ item.item.desc }}"
+        text: |
+          **应用**: `{{ item.item.name }}`
+          **节点**: `{{ inventory_hostname }}`
+          **版本(部署前)**: `{{ item.stdout_lines[-2] | regex_replace('\s*Successfully uninstalled\s*', '') }}`
+          **版本(部署后)**: `{{ item.stdout_lines[-1] | regex_replace('\s*Successfully installed\s*', '') }}`
+        color: "#D1F4D7"
+  when: item | changed
+  with_items: deployment_report_for_dist.results
+  tags:
+    - deployment
+
+- name: deployment | Send notification for deployment type=git
+  no_log: yes
+  bearychat:
+    url: "{{ bearychat_webhook_url }}"
+    text: ":thought_balloon: **部署通告** :point_left: {{ local_user }}"
+    attachments:
+      - title: "{{ item.item.desc }}"
+        text: |
+          **应用**: `{{ item.item.name }}`
+          **节点**: `{{ inventory_hostname }}`
+          **版本(部署前)**: `{{ item.before }}`
+          **版本(部署后)**: `{{ item.after }}`
+        color: "#D1F4D7"
+  when: item | changed
+  with_items: deployment_report_for_git.results
+  tags:
+    - deployment
+
+- name: deployment | Send notification for deployment triggers
+  no_log: yes
+  bearychat:
+    url: "{{ bearychat_webhook_url }}"
+    text: ":bulb: **触发器执行通告** :point_left: {{ local_user }}"
+    attachments:
+      - title: "{{ item.item.desc }}"
+        text: |
+          **应用**: `{{ item.item.name }}`
+          **节点**: `{{ inventory_hostname }}`
+          **触发器**: `{{ item.item.trigger }}`
+        color: "{{ '#D1F4D7' if item.rc == 0 else '#FFB397' }}"
+  when: item is mapping and item | changed
+  with_items: deployment_report_for_trigger.results
+  tags:
+    - deployment

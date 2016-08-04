@@ -1,0 +1,5 @@
+
+{% for variable_name, value in daemon_env.iteritems() %}
+export {{ variable_name }}='{{ value }}'
+{% endfor %}
+

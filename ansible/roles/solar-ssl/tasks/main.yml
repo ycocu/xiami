@@ -1,0 +1,12 @@
+---
+
+- name: certs | Deliver SSL keys
+  copy:
+    src: "certs/{{ item.name }}"
+    dest: "/etc/ssl/{{ item.type }}/{{ item.name }}"
+    owner: root
+    group: root
+    mode: u=rw,g=r,o=
+  with_items: public_ssl_keys
+  tags:
+    - certs

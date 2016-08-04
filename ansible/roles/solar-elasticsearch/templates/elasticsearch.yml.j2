@@ -1,0 +1,13 @@
+cluster.name: "{{ elasticsearch_cluster_name }}"
+
+node.name: "{{ inventory_hostname_short }}"
+node.master: {{ 'true' if inventory_hostname == elasticsearch_cluster_master_node else 'false' }}
+node.data: true
+
+network.host: "0.0.0.0"
+
+index.number_of_shards: {{ elasticsearch_number_of_shards }}
+index.number_of_replicas: {{ elasticsearch_number_of_replicas }}
+
+discovery.zen.ping.multicast.enabled: false
+discovery.zen.ping.unicast.hosts: ["{{ elasticsearch_cluster_master_node }}"]

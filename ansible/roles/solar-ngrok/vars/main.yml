@@ -1,0 +1,8 @@
+---
+
+ngrok_server_domain: "z.guihua.com"
+ngrok_server_listen: ":4443"
+ngrok_server_http_listen: ":80"
+ngrok_server_https_listen: ":443"
+ngrok_server_certificate: "/etc/ssl/certs/guihua.crt"
+ngrok_server_certificate_key: "/etc/ssl/private/guihua.key"

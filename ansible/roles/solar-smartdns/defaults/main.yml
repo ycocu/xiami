@@ -1,0 +1,6 @@
+---
+
+resolv_rotate: yes
+resolv_nameserver:
+  - 8.8.8.8
+  - 8.8.4.4

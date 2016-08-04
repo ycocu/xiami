@@ -1,0 +1,47 @@
+---
+
+- name: Make sure elasticsearch public signing key is imported
+  apt_key:
+    url: https://packages.elastic.co/GPG-KEY-elasticsearch
+    state: present
+  tags:
+    - elasticsearch
+
+- name: Make sure elasticsearch repository is enabled
+  apt_repository:
+    repo: "deb http://packages.elastic.co/elasticsearch/2.x/debian stable main"
+  tags:
+    - elasticsearch
+
+- name: Make sure elasticsearch is installed
+  apt:
+    name: "{{ item }}"
+    state: present
+  with_items:
+    - openjdk-7-jdk
+    - elasticsearch
+  tags:
+    - elasticsearch
+
+- name: Make sure elasticsearch is configured
+  template:
+    src: "{{ item.src }}"
+    dest: "{{ elasticsearch_conf_dir }}/{{ item.dest }}"
+    mode: u=rwx,g=rx,o=
+    owner: root
+    group: elasticsearch
+    backup: yes
+  notify: restart elasticsearch
+  with_items:
+    - src: "elasticsearch.yml.j2"
+      dest: "elasticsearch.yml"
+  tags:
+    - elasticsearch
+
+- name: Make sure elasticsearch is started
+  service:
+    name: elasticsearch
+    state: started
+    enabled: yes
+  tags:
+    - elasticsearch

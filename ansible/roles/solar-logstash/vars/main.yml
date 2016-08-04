@@ -1,0 +1,9 @@
+---
+
+logstash_bin_dir: /opt/logstash/bin
+logstash_conf_dir: /etc/logstash/conf.d/
+logstash_user: logstash
+logstash_logger_solar_host: localhost
+logstash_logger_solar_host: mars-2.guihua.tuluu.com
+logstash_logger_solar_port: 1544
+logstash_logger_solar_dir: /var/log/solar

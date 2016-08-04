@@ -1,0 +1,49 @@
+#!/sbin/runscript
+# Copyright 1999-2014 Gentoo Foundation
+# Distributed under the terms of the GNU General Public License v2
+# $Id$
+
+NAME=${SVCNAME#*.}
+
+pidfile="/var/run/${NAME}.pid"
+command="{{ deployment_root }}/bin/{{ item.1.proc }}"
+command_args="{{ item.1.args | default() }}"
+user="{{ item.0.user | default(daemon_user) }}"
+group="{{ item.0.group | default(daemon_group) }}"
+dir="{{ item.0.root | default('/') }}"
+
+stdout_log="/var/log/$NAME.log"
+stderr_log="/var/log/$NAME.err.log"
+
+{% if item.0.has_env is defined %}
+. /etc/default/solar-{{ item.0.name }}
+{% endif %}
+
+depend() {
+    need net
+}
+
+start_pre() {
+    touch $stdout_log $stderr_log
+    if [ -n "$user" ]; then
+        chown "${user}" $stdout_log $stderr_log
+        [ -n "$group" ] && chgrp "${group}" $stdout_log $stderr_log
+    fi
+}
+
+start() {
+    ebegin "Starting $NAME"
+    start-stop-daemon --start --background  \
+        --make-pidfile --pidfile "$pidfile" \
+        --user "$user" --chdir "$dir" \
+        -1 "$stdout_log" -2 "$stderr_log" \
+        --exec $command -- $command_args
+    eend $?
+}
+
+stop() {
+    ebegin "Stopping $NAME"
+    start-stop-daemon --stop --exec $command --pidfile $pidfile
+    eend $?
+}
+

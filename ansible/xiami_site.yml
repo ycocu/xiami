@@ -1,0 +1,19 @@
+---
+- hosts: dev_ops
+  #become: yes
+  remote_user: joey
+  roles:
+    - http
+
+  vars_files:
+   - /tmp/external_vars.yml
+  vars:
+    users:
+      alice:
+        name: Alice Appleworth
+        telephone: 123-456-7890
+      bob:
+        name: Bob Bananarama
+        telephone: 987-654-3210
+
+...

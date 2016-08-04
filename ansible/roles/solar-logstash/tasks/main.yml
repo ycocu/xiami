@@ -1,0 +1,74 @@
+---
+
+- name: Make sure logstash public signing key is imported
+  apt_key:
+    url: https://packages.elastic.co/GPG-KEY-elasticsearch
+    state: present
+  tags:
+    - logstash
+
+- name: Make sure logstash repository is enabled
+  apt_repository:
+    repo: "deb http://packages.elastic.co/logstash/2.1/debian stable main"
+  tags:
+    - logstash
+
+- name: Make sure logstash is installed
+  apt: 
+    name: "{{ item }}"
+    state: present
+  with_items:
+    - openjdk-7-jdk
+    - logstash
+  tags:
+    - logstash
+
+- name: Make sure logger directories is accessible
+  file:
+    path: "{{ item }}"
+    owner: "{{ logstash_user }}"
+    group: "{{ logstash_user }}"
+    mode: u=rwx,g=rx,o=
+    state: directory
+  with_items:
+    - "{{ logstash_vendor_dir }}/jar"
+    - "{{ logstash_vendor_dir }}/jar/jdbc"
+    - "{{ logstash_logger_solar_dir }}"
+  tags:
+    - logstash
+
+- name: Collect installed plugins of logstash
+  command: "{{ logstash_bin_dir }}/plugin list"
+  register: logstash_plugins_installed
+  always_run: yes
+  tags:
+    - logstash
+
+- name: Make sure extra plugins of logstash are installed
+  command: "{{ logstash_bin_dir }}/plugin install {{ item }}"
+  with_items: logstash_plugins
+  when: item not in logstash_plugins_installed.stdout_lines
+  tags:
+    - logstash
+
+- name: Make sure JDBC driver is installed to the logstash vendor directory
+  get_url:
+    url: "{{ logstash_cloud_driver }}"
+    sha256sum: "{{ logstash_cloud_driver_sha256sum }}"
+    dest: "{{ logstash_vendor_dir }}/jar/jdbc/{{ logstash_cloud_driver_filename }}"
+  tags:
+    - logstash
+
+- name: Make sure solar loggers are configured
+  template:
+    src: "logstash.d/{{ item }}.j2"
+    dest: "{{ logstash_conf_dir }}/{{ item }}"
+    mode: u=rw,g=r,o=r
+    validate: "{{ logstash_bin_dir }}/logstash agent --config=%s --configtest"
+  with_items:
+    - 01-solar.conf
+    - 02-solar-api-events.conf
+  when: logstash_logger_solar_host == inventory_hostname
+  notify: restart logstash
+  tags:
+    - logstash

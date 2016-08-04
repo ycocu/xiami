@@ -1,0 +1,6 @@
+---
+
+elasticsearch_cluster_name: solar-es
+elasticsearch_cluster_master_node: "mars-2.guihua.tuluu.com"
+elasticsearch_number_of_shards: 1
+elasticsearch_number_of_replicas: 1

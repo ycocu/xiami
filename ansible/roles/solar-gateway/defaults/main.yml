@@ -1,0 +1,17 @@
+---
+
+unbound_dnssec_enabled: yes
+
+unbound_conf_root: /etc/unbound
+unbound_conf_list:
+  - 00general.conf
+  - 99forwardzone.conf
+
+unbound_interface:
+  - 0.0.0.0
+unbound_access_control:
+  - 0.0.0.0/0 refuse
+  - 127.0.0.0/8 allow
+unbound_local_a_record: []
+unbound_private_address: []
+unbound_forward_zone: []

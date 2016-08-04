@@ -1,0 +1,6 @@
+---
+galaxy_info:
+  author: Jiangge Zhang
+  company: Wealthworks
+  license: Private
+  min_ansible_version: 1.2

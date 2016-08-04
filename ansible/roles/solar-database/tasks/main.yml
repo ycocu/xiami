@@ -1,0 +1,61 @@
+---
+
+- name: Make sure CouchDB is installed
+  apt: name={{ item }} state=present default_release=wheezy
+  with_items:
+    - couchdb
+    - erlang-base
+    - erlang-asn1
+    - erlang-crypto
+    - erlang-eunit
+    - erlang-inets
+    - erlang-os-mon
+    - erlang-public-key
+    - erlang-runtime-tools
+    - erlang-snmp
+    - erlang-ssl
+    - erlang-syntax-tools
+    - erlang-tools
+    - erlang-webtool
+    - erlang-xmerl
+    - libjs-jquery
+    - libjs-jquery-form
+  tags:
+    - couchdb
+
+- name: Make sure CouchDB is configured
+  copy:
+    src: couchdb
+    dest: /etc/couchdb/local.d/00-httpd
+    mode: u=rw,g=r,o=r
+    owner: couchdb
+    group: couchdb
+  notify: restart couchdb
+  tags:
+    - couchdb
+
+- name: Make sure CouchDB is running
+  service: name=couchdb state=started
+  tags:
+    - couchdb
+
+- name: Make sure beanstalkd is installed
+  apt: name={{ item }} state=present
+  with_items:
+    - beanstalkd
+  tags:
+    - beanstalkd
+
+- name: Make sure beanstalkd is configured
+  copy:
+    src: beanstalkd
+    dest: /etc/default/beanstalkd
+    mode: u=rw,g=r,o=r
+  notify: restart beanstalkd
+  tags:
+    - beanstalkd
+
+- name: Make sure beanstalkd is running
+  service: name=beanstalkd state=started
+  tags:
+    - beanstalkd

@@ -1,0 +1,187 @@
+---
+
+nginx_enabled: yes
+nginx_status: no
+nginx_gzip: no
+nginx_delete_default_site: yes
+nginx_access_log: /var/log/nginx/access.log
+nginx_error_log: /var/log/nginx/error.log
+nginx_http_options:
+  - |
+    log_format main '$remote_addr - $remote_user [$time_local] '
+                    '"$request" $status $body_bytes_sent '
+                    '"$http_referer" "$http_user_agent" "$http_cookie" '
+                    '"$sent_http_x_userid"';
+  - |
+    upstream solar {
+      server moon-1.guihua.tuluu.com:10000;
+      server moon-2.guihua.tuluu.com:10000;
+    }
+  - |
+    upstream solar-weixin {
+      server moon-1.guihua.tuluu.com:14000;
+      server moon-2.guihua.tuluu.com:14000;
+    }
+  - |
+    upstream ngrok {
+      server moon-2.guihua.tuluu.com:80;
+    }
+nginx_servers:
+  - |
+    listen *:443 ssl http2;
+    server_name www.guihua.com;
+    keepalive_timeout 70;
+    charset utf-8;
+
+    access_log /var/log/nginx/solar_access.log main;
+    error_log /var/log/nginx/solar_error.log;
+
+    ssl_certificate /etc/ssl/certs/guihua.crt;
+    ssl_certificate_key /etc/ssl/private/guihua.key;
+    ssl_dhparam /etc/ssl/private/guihua-dhparams.pem;
+    ssl_session_cache builtin:1000 shared:SSL:10m;
+    ssl_session_timeout 5m;
+
+    ssl_protocols TLSv1.2 TLSv1.1 TLSv1;
+    ssl_prefer_server_ciphers on;
+    ssl_ciphers "EECDH+ECDSA+AESGCM EECDH+aRSA+AESGCM EECDH+ECDSA+SHA384 EECDH+ECDSA+SHA256 EECDH+aRSA+SHA384 EECDH+aRSA+SHA256 EECDH+aRSA+RC4 EECDH EDH+aRSA !RC4 !aNULL !eNULL !LOW !3DES !MD5 !EXP !PSK !SRP !DSS";
+
+    add_header Strict-Transport-Security "max-age=31536000;";
+    error_page 403 /errors/403.html;
+    error_page 404 405 410 /errors/404.html;
+    error_page 429 /errors/limit.html;
+    error_page 500 502 503 504 /errors/500.html;
+
+    location / {
+      proxy_set_header Host $host;
+      proxy_redirect off;
+      proxy_intercept_errors on;
+      proxy_set_header X-Real-IP $remote_addr;
+      proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+      proxy_set_header X-Forwarded-Proto $scheme;
+      proxy_set_header X-Scheme $scheme;
+      proxy_pass http://solar;
+    }
+
+    location ~* ^\/(api|j|activity) {
+      proxy_set_header Host $host;
+      proxy_redirect off;
+      proxy_intercept_errors off;  # AJAX and API
+      proxy_set_header X-Real-IP $remote_addr;
+      proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+      proxy_set_header X-Forwarded-Proto $scheme;
+      proxy_set_header X-Scheme $scheme;
+      proxy_pass http://solar;
+    }
+
+    location /static/dist {
+      root /srv/solar-jupiter;
+    }
+
+    location = /favicon.ico {
+      root /srv/solar-jupiter/static/dist/img;
+    }
+
+    location /errors {
+      root /srv/solar-jupiter/templates;
+      internal;
+    }
+  - |
+    listen *:443 ssl http2;
+    server_name guihua.com;
+
+    access_log off;
+    error_log off;
+
+    ssl_certificate /etc/ssl/certs/guihua.crt;
+    ssl_certificate_key /etc/ssl/private/guihua.key;
+    ssl_dhparam /etc/ssl/private/guihua-dhparams.pem;
+    ssl_session_cache builtin:1000 shared:SSL:10m;
+    ssl_session_timeout 5m;
+
+    ssl_protocols TLSv1.2 TLSv1.1 TLSv1;
+    ssl_prefer_server_ciphers on;
+    ssl_ciphers "EECDH+ECDSA+AESGCM EECDH+aRSA+AESGCM EECDH+ECDSA+SHA384 EECDH+ECDSA+SHA256 EECDH+aRSA+SHA384 EECDH+aRSA+SHA256 EECDH+aRSA+RC4 EECDH EDH+aRSA !RC4 !aNULL !eNULL !LOW !3DES !MD5 !EXP !PSK !SRP !DSS";
+
+    add_header Strict-Transport-Security "max-age=31536000;";
+
+    location / {
+      return 301 https://www.guihua.com$request_uri;
+    }
+
+    location /raven/ {
+      # DO NOT COPY IT
+      # those configuration items are optimized for sentry only
+      proxy_set_header   Host                 "sentry.tuluu.com";
+      proxy_set_header   X-Forwarded-Proto    "http";
+      proxy_set_header   X-Forwarded-For      $remote_addr;
+      proxy_redirect     off;
+
+      # keepalive + raven.js is a disaster
+      keepalive_timeout 0;
+
+      # use very aggressive timeouts
+      proxy_read_timeout 5s;
+      proxy_send_timeout 5s;
+      send_timeout 5s;
+      resolver_timeout 5s;
+      client_body_timeout 5s;
+
+      # buffer larger messages
+      client_max_body_size 5m;
+      client_body_buffer_size 100k;
+
+      # proxy to sentry
+      rewrite ^/raven/(.*)$ /$1 break;
+      proxy_pass http://sentry.tuluu.com;
+    }
+  - |
+    listen *:80;
+    server_name guihua.com www.guihua.com;
+
+    access_log off;
+    error_log off;
+
+    location / {
+      rewrite ^(.*) https://www.guihua.com$1 permanent;
+    }
+  - |
+    listen *:80;
+    server_name weixin.guihua.com;
+
+    access_log /var/log/nginx/solar_weixin_access.log main;
+    error_log /var/log/nginx/solar_weixin_error.log;
+
+    location / {
+      proxy_set_header Host $host;
+      proxy_redirect off;
+      proxy_intercept_errors on;
+      proxy_set_header X-Real-IP $remote_addr;
+      proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+      proxy_set_header X-Forwarded-Proto $scheme;
+      proxy_set_header X-Scheme $scheme;
+      proxy_pass http://solar-weixin;
+    }
+  - |
+    listen *:80;
+    server_name *.z.guihua.com;
+
+    access_log /var/log/nginx/ngrok_access.log main;
+    error_log /var/log/nginx/ngrok_error.log;
+
+    location / {
+      proxy_set_header Host $host;
+      proxy_redirect off;
+      proxy_intercept_errors on;
+      proxy_set_header X-Real-IP $remote_addr;
+      proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+      proxy_set_header X-Forwarded-Proto $scheme;
+      proxy_set_header X-Scheme $scheme;
+      proxy_pass http://ngrok;
+    }
+  - |
+    listen *:80 default_server;
+
+    location / {
+      return 404;
+    }

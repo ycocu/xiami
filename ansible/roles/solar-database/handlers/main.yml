@@ -1,0 +1,7 @@
+---
+
+- name: restart couchdb
+  service: name=couchdb state=restarted
+
+- name: restart beanstalkd
+  service: name=beanstalkd state=restarted
