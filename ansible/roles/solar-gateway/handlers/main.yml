@@ -1,0 +1,11 @@
+---
+
+- name: restart unbound
+  service: name=unbound state=restarted
+  tags:
+    - unbound
+
+- name: restart haproxy
+  service: name=haproxy state=restarted
+  tags:
+    - haproxy

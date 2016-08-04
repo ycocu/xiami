@@ -1,0 +1,47 @@
+---
+iptables_enabled: yes
+iptables_logging: no
+iptables_deny_all: no
+iptables_raw_rules:
+  - "-t nat -I POSTROUTING -s 172.16.1.0/24 -o eth0 -j MASQUERADE"
+  - "-t nat -I POSTROUTING -s 172.16.1.0/24 -o tun0 -j MASQUERADE"
+
+unbound_dnssec_enabled: no
+unbound_access_control:
+  - 0.0.0.0/0 refuse
+  - 127.0.0.0/8 allow
+  - 172.16.1.0/24 allow
+unbound_forward_zone:
+  - name: tuluu.com
+    addr:
+      - 192.168.1.221
+  - name: .
+    addr:
+      - 100.100.2.138
+      - 100.100.2.136
+    fallback: yes
+unbound_local_a_record:
+  - host: moon-1.guihua.tuluu.com
+    addr: 172.16.1.1
+  - host: moon-2.guihua.tuluu.com
+    addr: 172.16.1.2
+  - host: sun.guihua.tuluu.com
+    addr: 172.16.1.3
+  - host: mars-1.guihua.tuluu.com
+    addr: 172.16.1.4
+  - host: mars-2.guihua.tuluu.com
+    addr: 172.16.1.5
+  - host: sunbeam.guihua.tuluu.com
+    addr: 172.16.1.9
+
+haproxy_backends:
+  - name: ngrok-incoming
+    mode: tcp
+    balance: roundrobin
+    servers:
+      - moon-2 moon-2.guihua.tuluu.com:4443 check
+haproxy_frontends:
+  - name: ngrok-incoming
+    mode: tcp
+    bind: "*:4443"
+    default_backend: ngrok-incoming

@@ -1,0 +1,65 @@
+---
+- hosts: dev_ops
+  remote_user: joey
+  tasks: 
+    - name: test connection
+      #become: yes
+      #ping:
+      shell: echo "{{ hostvars['192.168.10.190'] }}"
+    - shell: echo '{{ groups }}'
+    - shell: echo '{{ play_hosts }}'
+    - shell: ls -alh
+      remote_user: "{{ rm_user }}"
+      when: ansible_os_family == "Debian"
+  vars:
+    rm_user: joey
+
+- hosts: dev_ops
+  remote_user: joey
+  become: yes
+  tasks:
+    - name: Copy ansible inventory file to client
+      copy: src=./hosts dest=/tmp/hosts owner=root group=root mode=0644
+
+- hosts: dev_ops
+  remote_user: joey
+  tasks:
+    #- shell: echo '{{ item.sa }}'
+    - shell: echo '{{ online_vm }}'
+  #vars:
+  #  hello_vars: joey+++++
+
+  vars_files:
+    - /tmp/external_vars.yml
+
+  #with_items: "{{ online_vm }}"
+
+- hosts: dev_ops
+  remote_user: joey
+  vars:
+    online_vm:
+      athena: aaaaa
+      athena_rd: bbbbb
+  tasks:
+    #- shell: echo '{{ item }}'
+    - name: test
+      shell: echo '{{item}}'
+      register: result
+      with_items:
+        - '{{ online_vm.athena }}'
+        - '{{ online_vm.athena_rd }}'
+
+    - debug: msg="it changed"
+      when: result|changed
+
+    - name: touch files with an optional mode
+      file: dest={{item.path}} state=touch mode={{item.mode|default(omit)}}
+      with_items:
+        - path: /tmp/foo
+        - path: /tmp/bar
+        - path: /tmp/baz
+          mode: "0444"
+
+  #with_items:
+  #  '{{ online_vm }}'
+...

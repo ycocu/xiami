@@ -1,0 +1,22 @@
+{% for item in unbound_interface %}
+    interface: {{ item }}
+{% endfor %}
+
+{% for item in unbound_private_address %}
+    private-address: {{ item }}
+{% endfor %}
+
+{% for item in unbound_access_control %}
+    access-control: {{ item }}
+{% endfor %}
+
+{% for item in unbound_local_a_record %}
+    local-data: "{{ item.host }} A {{ item.addr }}"
+{% endfor %}
+{% for item in unbound_local_a_record %}
+    local-data-ptr: "{{ item.addr }} {{ item.host }}"
+{% endfor %}
+
+
+remote-control:
+    control-enable: no

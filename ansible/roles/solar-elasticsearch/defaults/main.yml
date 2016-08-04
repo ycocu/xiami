@@ -1,0 +1,8 @@
+---
+
+elasticsearch_conf_dir: /etc/elasticsearch
+
+elasticsearch_cluster_name: elasticsearch
+elasticsearch_cluster_master_node: ""
+elasticsearch_number_of_shards: 0
+elasticsearch_number_of_replicas: 0

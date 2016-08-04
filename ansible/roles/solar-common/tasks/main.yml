@@ -1,0 +1,17 @@
+---
+
+- name: Make sure all legacy files are removed
+  file:
+    path: "{{ item }}"
+    state: absent
+  with_items: common_legacy_files
+  tags:
+    - remove-files
+
+- name: Update /etc/hosts to remove the default name
+  lineinfile:
+    dest: /etc/hosts
+    regexp: "^172.16.1.\\d+"
+    state: absent
+  tags:
+    - remove-files

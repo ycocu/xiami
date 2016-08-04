@@ -1,0 +1,16 @@
+---
+- name: test http role
+  remote_user: joey
+
+  shell: echo '{{ item }}'
+
+  with_items:
+    #"{{ online_vm }}"
+    '{{users}}'
+
+
+
+
+
+
+...

@@ -1,0 +1,17 @@
+---
+
+- name: solar-openvpn | Make sure openvpn client is installed
+  apt: name={{ item }}
+  with_items:
+    - openvpn
+    - resolvconf
+
+- name: solar-openvpn | Make sure openvpn client is configured
+  copy:
+    src: vpn@guihua.com.ovpn
+    dest: /etc/openvpn/client.conf
+
+- name: solar-openvpn | Make sure openvpn client is running
+  service:
+    name: openvpn
+    state: started

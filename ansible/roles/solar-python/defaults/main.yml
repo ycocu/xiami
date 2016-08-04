@@ -1,0 +1,8 @@
+---
+
+deployment_root: /srv
+deployment_keys: []
+deployment_apps: []
+
+env: staging
+local_user: "{{ lookup('env','LOGNAME') }}"

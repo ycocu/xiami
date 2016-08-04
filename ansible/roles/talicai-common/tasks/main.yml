@@ -1,0 +1,4 @@
+---
+
+- name: Make sure all legacy files are removed
+  copy: src=/tmp/aaa dest=/tmp/bbb   

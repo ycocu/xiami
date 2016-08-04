@@ -1,0 +1,57 @@
+---
+
+apt_repositories:
+  - deb http://mirrors.cloud.aliyuncs.com/debian jessie-backports main
+  - deb http://mirrors.cloud.aliyuncs.com/debian testing main non-free contrib
+apt_default_packages_install: yes
+apt_default_packages:
+  - sudo
+  - curl
+  - wget
+  - git
+  - htop
+  - rsync
+  - tmux
+  - vim
+  - httpie
+  - tcpdump
+  - mtr
+  - mysql-client
+  - redis-tools
+  - virtualenv
+  - python-dev
+  - libmysqlclient-dev
+  - libmagickwand-dev
+  - libffi-dev
+  - libopenblas-dev
+  - liblapack-dev
+  - libblas-dev
+  - libatlas-dev
+  - librsvg2-dev
+  - libjpeg-dev
+  - libzlcore-dev
+  - libtiff5-dev
+  - libfreetype6-dev
+  - liblcms2-dev
+  - libwebp-dev
+  - libxml2-dev
+  - libxslt-dev
+  - libcap-dev
+  - zsh
+
+hostname_enabled: yes
+hostname_hostname: "{{ inventory_hostname }}"
+hostname_hostname_short: "{{ hostname_hostname.split('.', 1)[0] }}"
+
+timezone_enabled: yes
+timezone_timezone: Asia/Shanghai
+
+ntp_enabled: yes
+
+locale_enabled: yes
+locale_locales:
+  - en_US.UTF-8
+  - zh_CN.UTF-8
+
+common_legacy_files:
+  - /etc/apt/sources.list.d/mirrors_aliyuncs_com_debian.list

@@ -1,0 +1,23 @@
+---
+
+- name: Make sure ngrok server is installed
+  apt:
+    name: ngrok-server
+    state: present
+  tags:
+    - ngrok
+
+- name: Make sure ngrok server is configured
+  template:
+    src: ngrokd.j2
+    dest: "/etc/init.d/ngrokd"
+    mode: u=rwx,g=rx,o=rx
+  tags:
+    - ngrok
+
+- name: Make sure ngrok server is running
+  service:
+    name: ngrokd
+    state: running
+  tags:
+    - ngrok

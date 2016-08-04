@@ -1,0 +1,9 @@
+---
+
+public_ssl_keys:
+  - name: guihua.crt
+    type: certs
+  - name: guihua.key
+    type: private
+  - name: guihua-dhparams.pem
+    type: private

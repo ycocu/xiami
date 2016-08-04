@@ -1,0 +1,106 @@
+---
+# tasks file for solar-daemon
+
+- name: deployment | Prepare log directory
+  file:
+    path: '/var/log/{{ item.name }}'
+    state: directory
+    owner: '{{ daemon_user }}'
+    group: '{{ daemon_group }}'
+    mode: 0755
+  when: item.logs is defined
+  with_items: '{{ deployment_apps }}'
+  tags:
+    - deployment
+
+- name: deployment | Fetching and install binary distribution
+  unarchive:
+    src: '{{deployment_dist_url}}{{item.name}}-linux-amd64-{{item.version}}.tar.xz'
+    dest: '{{deployment_root}}/bin'
+    copy: no
+    mode: 0755
+  when: item.type is not defined or item.type == 'dist'
+  with_items: '{{ deployment_apps }}'
+  register: daemon_bin_done
+  tags:
+    - fetch
+    - deployment
+
+- name: deployment | Prepare data directory
+  file:
+    path: '{{ item.data_dir }}'
+    state: directory
+    owner: '{{ daemon_user }}'
+    group: '{{ daemon_group }}'
+    mode: 0750
+  when: item.data_dir is defined
+  with_items: '{{ deployment_apps }}'
+  tags:
+    - deployment
+
+- include_vars: "env_vars/{{ item.name }}_{{ env }}.yml"
+  with_items: '{{ deployment_apps }}'
+  when: item.has_env is defined
+  tags:
+    - deployment
+
+- name: deployment | Configure environment variables of daemon
+  template:
+    src: "default.sh.j2"
+    dest: "/etc/default/solar-{{ item.name }}"
+    group: '{{ daemon_group }}'
+    mode: u=rw,g=r,o=
+  when: item.has_env is defined
+  with_items: '{{ deployment_apps }}'
+  register: daemon_env_done
+  tags:
+    - deployment
+
+- name: deployment | Configure init-script files of application
+  template:
+    src: 'init.{{ ansible_os_family }}.j2'
+    dest: "/etc/init.d/{{ item.1.name }}"
+    mode: u=rwx,g=rx,o=rx
+  when: item.1.sticky is not defined or item.1.sticky == inventory_hostname
+  with_subelements:
+    - '{{ deployment_apps }}'
+    - services
+  tags:
+    - deployment
+
+- name: deployment | Make sure changed services are restarted
+  service: name={{ item.name }} state=restarted
+  when: item.sticky is not defined or item.sticky == inventory_hostname
+  with_flattened:
+    - "{{ daemon_bin_done.results | selectattr('changed', 'equalto', True) | map(attribute='item') | map(attribute='services') | list }}"
+    - "{{ daemon_env_done.results | selectattr('changed', 'equalto', True) | map(attribute='item') | map(attribute='services') | list }}"
+  register: deployment_restarted
+  tags:
+    - deployment
+
+- name: deployment | Make sure services are running
+  service: name={{ item.1.name }} state=started
+  when: item.1.sticky is not defined or item.1.sticky == inventory_hostname
+  with_subelements:
+    - '{{ deployment_apps }}'
+    - services
+  tags:
+    - deployment
+
+- name: deployment | Send notification for deployment
+  no_log: yes
+  bearychat:
+    url: "{{ bearychat_webhook_url }}"
+    text: ":thought_balloon: **部署通告** :point_left: {{ local_user }}"
+    attachments:
+      - title: "{{ item.item.desc }}"
+        text: |
+          **应用**: `{{ item.item.name }}`
+          **节点**: `{{ inventory_hostname }}`
+          **版本**: `{{ item.item.version }}`
+        color: "#D1F4D7"
+  when: item | changed
+  with_items: '{{ daemon_bin_done.results }}'
+  tags:
+    - deployment
+

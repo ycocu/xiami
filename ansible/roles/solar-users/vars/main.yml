@@ -1,0 +1,62 @@
+---
+
+genericusers_groups:
+  - name: devops
+    gid: 5000
+genericusers_users:
+  - name: liutao
+    home: /home/liutao
+    shell: /bin/bash
+    groups: ["devops", "sudo"]
+    ssh_keys:
+      - "ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBC8mX+pWJdvZ929BFa/9ixPIbc+vBojgDpi50XcatTwEg3bbB4Eghi/oCijWSELdWbwuGA1Isy6kUVl2LBrwfO4= liutao@liut-laptop.local"
+  - name: miaiwu
+    home: /home/miaiwu
+    groups: ["devops", "sudo"]
+    ssh_keys:
+      - "ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBJhg8V+P98Ki0WTon7LpGgdaAWlo8SkCzI+5SLPmiTPJ1d4RssZwm1Y6EdS/nbWjOMFH5fOd3oZDg0aN8MS5/54= miaiwu@guihua.com"
+  - name: sunyali
+    home: /home/sunyali
+    shell: /bin/zsh
+    groups: ["devops"]
+    ssh_keys:
+      - "ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBLHHJbGTvVIasefLQRY6xRL3/dKYzV+iYZRYW9pBgk4zF3gnumnfW5Sam4Q3tB9eGt65BcJv/om9EiBE/sGC1ZA= yali@bogon"
+  - name: fengqiang
+    home: /home/fengqiang
+    shell: /bin/zsh
+    groups: ["devops", "sudo"]
+    ssh_keys:
+      - "ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBPnlicQ9uJ/Yq0MnVPREgK4lAk1LzV+anpUuFjvQ2b4lzbFYwsyGmQmVIBqIhhhBn3oz91FfFIDMwE1Np75iIpE= fengqiang@fq.local"
+  - name: lijiaqing
+    home: /home/lijiaqing
+    shell: /bin/zsh
+    groups: ["devops", "sudo"]
+    ssh_keys:
+      - "ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBNSwxwxqgimLFhpUhuCVrJxL6Uy842T+K8eKwbY8fK7GAV4UTOi/iWllD0EQYz8KHpHqNgVgRUB/ekihN1+pUFQ= Justin@Justin-MacBook-Pro.local"
+  - name: yuyaxi
+    home: /home/yuyaxi
+    shell: /bin/zsh
+    groups: []
+    ssh_keys:
+      - "ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBDQbO0XvuYBpAN88muHHHgYWV523VdODiuk1NcYpr/W9Eakk9bnbflA3EksDaMIZcRf5Kr+8ApAI4GWPYawWYqY= RyanYu@bogon"
+  - name: wujunzhuo
+    home: /home/wujunzhuo
+    shell: /bin/zsh
+    groups: ["devops", "sudo"]
+    ssh_keys:
+      - "ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBIvXZzsyeDQDbpCKxlUiF59Lp+JAEAD1YUeIQdBNhGfp/8LFp4eGngRpi+R85ITQikl7iriybFoGDv2bGScG3vA= junzhuo.wjz@AppledeMacBook-Pro.local"
+  - name: wangyi
+    home: /home/wangyi
+    shell: /bin/bash
+    groups: ["devops", "sudo"]
+    ssh_keys:
+      - "ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBItIvNjWrZSsDvy5ti6oeT2XZJlf8yUBNDpb5vJN1osRFvKzkoR3B5bHwcPvt1wfeeSol1GchwlrdWulXdLgs1Y= wangyi@bogon"
+
+genericusers_groups_removed: []
+genericusers_users_removed:
+  - name: zhangjiangge
+  - name: zhangdewei
+
+openssh_server_vars:
+  PasswordAuthentication: no
+  PermitRootLogin: no

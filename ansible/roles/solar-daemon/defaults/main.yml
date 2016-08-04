@@ -1,0 +1,13 @@
+---
+# defaults file for solar-daemon
+
+deployment_dist_url: http://gopkg.tuluu.com/
+deployment_root: /usr/local
+deployment_keys: []
+deployment_apps: []
+
+daemon_user: nobody
+daemon_group: users
+
+env: staging
+local_user: "{{ lookup('env','LOGNAME') }}"

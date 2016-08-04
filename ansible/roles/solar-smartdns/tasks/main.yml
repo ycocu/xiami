@@ -1,0 +1,8 @@
+---
+
+- name: Make sure the /etc/resolv.conf is configured
+  template:
+    src: resolv.conf.j2
+    dest: /etc/resolv.conf
+  tags:
+    - smartdns

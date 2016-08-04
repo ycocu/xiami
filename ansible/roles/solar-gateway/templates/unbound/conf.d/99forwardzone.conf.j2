@@ -1,0 +1,10 @@
+{% for zone in unbound_forward_zone %}
+forward-zone:
+    name: "{{ zone.name }}"
+{% for addr in zone.addr %}
+    forward-addr: {{ addr }}
+{% endfor %}
+{% if zone.fallback | default(False) %}
+    forward-first: no
+{% endif %}
+{% endfor %}

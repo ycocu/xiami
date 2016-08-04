@@ -1,0 +1,31 @@
+input {
+  tcp {
+    port => {{ logstash_logger_solar_port }}
+    type => "solar"
+  }
+  udp {
+    port => {{ logstash_logger_solar_port }}
+    type => "solar"
+  }
+}
+filter {
+  if [type] == "solar" {
+    grok {
+      match => {
+        "message" => "(?<category>[a-zA-Z0-9_\-.]{3,30})\:(?<line>.+)"
+      }
+    }
+    dns {
+      reverse => [ "host" ]
+      action => "replace"
+    }
+  }
+}
+output {
+  if [type] == "solar" {
+    file {
+      path => "{{ logstash_logger_solar_dir }}/%{host}/%{category}/%{+YYYY-MM-dd}.log"
+      codec => line { format => "%{line}" }
+    }
+  }
+}

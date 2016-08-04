@@ -1,0 +1,5 @@
+options timeout:1 attempts:1{% if resolv_rotate %} rotate{% endif %}
+
+{% for item in resolv_nameserver %}
+nameserver {{ item }}
+{% endfor %}

@@ -1,0 +1,64 @@
+# via http://www.tuluu.com/guihua/cloudstash/blob/master/logstash.conf.d/solar_api_events.conf
+input {
+  file {
+    # (TODO) move to beats
+    path => [
+        "{{ logstash_logger_solar_dir }}/moon-1.guihua.tuluu.com/api_events/*.log",
+        "{{ logstash_logger_solar_dir }}/moon-2.guihua.tuluu.com/api_events/*.log"
+    ]
+    sincedb_path => "{{ logstash_home_dir }}/.sincedb_solar_api_events"
+    start_position => "beginning"
+    type => "solar_api_events"
+  }
+}
+filter {
+  if [type] == "solar_api_events" {
+    grok {
+      match => {
+        "message" => "%{TIMESTAMP_ISO8601:event_time}\s+%{WORD:event_type}\s+%{GREEDYDATA:event_args}"
+      }
+      remove_field => [ "message" ]
+    }
+    mutate {
+      gsub => [ "event_args", "=\s+", "=<> " ]
+    }
+    kv {
+      source => "event_args"
+      target => "event_args"
+      default_keys => [
+        "channel", "",
+        "endpoint", "",
+        "oauth_client_id", "",
+        "platform", "",
+        "version", "",
+        "user_id", "",
+        "amount", "",
+        "order_id", ""
+      ]
+      trim => "<>"
+      field_split => "\s+"
+    }
+  }
+}
+output {
+  if [type] == "solar_api_events" {
+    if "_grokparsefailure" not in [tags] {
+      jdbc {
+        connection_string => "{{ logstash_cloud_dsn }}"
+        statement => [
+        "INSERT INTO solar_api_events (event_type, event_time, channel, endpoint, platform, version, user_id, amount, order_id, client_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        "%{event_type}",
+        "%{event_time}",
+        "%{event_args[channel]}",
+        "%{event_args[endpoint]}",
+        "%{event_args[platform]}",
+        "%{event_args[version]}",
+        "%{event_args[user_id]}",
+        "%{event_args[amount]}",
+        "%{event_args[order_id]}",
+        "%{event_args[oauth_client_id]}"
+        ]
+      }
+    }
+  }
+}
