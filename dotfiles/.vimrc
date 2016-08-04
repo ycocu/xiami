@@ -1,13 +1,29 @@
 set encoding=utf-8
 set fencs=utf-8,ucs-bom,shift-jis,gb18030,gbk,gb2312,cp936
 set fileencodings=utf-8,ucs-bom,chinese
+set backspace=2
 
 vmap "+y :w !pbcopy<CR><CR> 
 nmap "+p :r !pbpaste<CR><CR>
 
 "语言设置
 set langmenu=zh_CN.UTF-8
- 
+
+
+
+map "+y :w !pbcopy<CR><CR> 
+map "+p :r !pbpaste<CR><CR> 
+
+" ctrl-x for cut 
+vmap <C-x> :!pbcopy<cr> 
+" " ctrl-c for copy 
+vmap <C-c> :w !pbcopy<cr><cr> 
+" " ctrl-v for paste 
+"nmap <C-v> :set paste<CR>:r !pbpaste<CR>:set nopaste<CR> 
+imap <C-v> <Esc>:set paste<CR>:r !pbpaste<CR>:set nopaste<CR> 
+
+
+
 "设置语法高亮
 syntax enable
 syntax on
@@ -25,7 +41,10 @@ set showmatch
  
 "去掉vi一致性
 set nocompatible
- 
+
+"highlight
+"set ruler
+
 "设置缩进
 set tabstop=4
 set softtabstop=4
@@ -54,15 +73,54 @@ let g:winManagerWindowLayout='FileExplorer|TagList'
 nmap wm :WMToggle<cr>
 map <silent> <F9> :WMToggle<cr> "将F9绑定至WinManager,即打开WimManager
  
-"设置CSCOPE
-set cscopequickfix=s-,c-,d-,i-,t-,e- "设定是否使用quickfix窗口显示cscope结果
+" set the runtime path to include Vundle and initialize
+set rtp+=~/.vim/bundle/vundle/
+call vundle#rc()
+
+" install vim-go
+Plugin 'fatih/vim-go'
+
+Plugin 'gmarik/vundle'
+
+Plugin 'scrooloose/nerdtree'
+Plugin 'jistr/vim-nerdtree-tabs'
+
+
+" The following are examples of different formats supported. 
+" Keep Plugin commands between here and filetype plugin indent on. 
+" scripts on GitHub repos
+Plugin 'hynek/vim-python-pep8-indent'
+Plugin 'tpope/vim-fugitive'
+Plugin 'Lokaltog/vim-easymotion'
+Plugin 'tpope/vim-rails.git'" The sparkup vim script is in a subdirectory of this repo called vim.
+" Pass the path to set the runtimepath properly. 
+Plugin 'rstacruz/sparkup', {'rtp': 'vim/'} 
+" scripts from http://vim-scripts.org/vim/scripts.html 
+Plugin 'L9'
+Plugin 'FuzzyFinder'" scripts not on GitHub
+Plugin 'git://git.wincent.com/command-t.git'" git repos on your local machine (i.e. when working on your own plugin)
+"Plugin 'file:///home/gmarik/path/to/plugin'" ...
+Bundle 'Valloric/YouCompleteMe'
  
-"设置Grep插件
-nnoremap <silent> <F3> :Grep<CR>
- 
-"设置一键编译
-map <F6> :make<CR>
- 
+
+" use goimports for formatting
+let g:go_fmt_command = "goimports"
+
+" " turn highlighting on
+let g:go_highlight_functions = 1
+let g:go_highlight_methods = 1
+let g:go_highlight_structs = 1
+let g:go_highlight_operators = 1
+let g:go_highlight_build_constraints = 1
+
+let g:syntastic_go_checkers = ['go', 'golint', 'errcheck']
+
+" Open go doc in vertical window, horizontal, or tab
+au Filetype go nnoremap <leader>v :vsp <CR>:exe "GoDef" <CR>
+au Filetype go nnoremap <leader>s :sp <CR>:exe "GoDef"<CR>
+au Filetype go nnoremap <leader>t :tab split <CR>:exe "GoDef"<CR>
+
+
 "设置自动补全
 filetype plugin indent on   "打开文件类型检测
 set completeopt=longest,menu "关掉智能补全时的预览窗口
@@ -72,77 +130,43 @@ if exists("tags")
     set tags=./tags
 endif
  
-"设置按F12就更新tags的方法
-map <F12> :call Do_CsTag()<CR>
-nmap <C-@>s :cs find s <C-R>=expand("<cword>")<CR><CR>:copen<CR>
+"""""""""""""""""""""""""""""
+"nerd tree set
+"""""""""""""""""""""""""""""
+
+map <F2> :NERDTreeToggle<CR>
+autocmd bufenter * if (winnr("$") == 1 && exists("b:NERDTreeType")&&b:NERDTreeType == "primary") | q | endif
+
+
+autocmd VimEnter * NERDTree
+"let NERDTreeWinPos="right"
+let NERDTreeShowBookmarks=1
+
+
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" cscope setting
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+if has("cscope")
+  set csprg=/usr/local/bin/cscope
+  set csto=1
+  set cst
+  set nocsverb
+  " add any database in current directory
+  if filereadable("cscope.out")
+      cs add cscope.out
+  endif
+  set csverb
+endif
+
+nmap <C-@>s :cs find s <C-R>=expand("<cword>")<CR><CR>
 nmap <C-@>g :cs find g <C-R>=expand("<cword>")<CR><CR>
-nmap <C-@>c :cs find c <C-R>=expand("<cword>")<CR><CR>:copen<CR>
-nmap <C-@>t :cs find t <C-R>=expand("<cword>")<CR><CR>:copen<CR>
-nmap <C-@>e :cs find e <C-R>=expand("<cword>")<CR><CR>:copen<CR>
-nmap <C-@>f :cs find f <C-R>=expand("<cfile>")<CR><CR>:copen<CR>
-nmap <C-@>i :cs find i ^<C-R>=expand("<cfile>")<CR>$<CR>:copen<CR>
-nmap <C-@>d :cs find d <C-R>=expand("<cword>")<CR><CR>:copen<CR>
-function Do_CsTag()
-        let dir = getcwd()
-        if filereadable("tags")
-            if(g:iswindows==1)
-                let tagsdeleted=delete(dir."\\"."tags")
-            else
-                let tagsdeleted=delete("./"."tags")
-            endif
-            if(tagsdeleted!=0)
-                echohl WarningMsg | echo "Fail to do tags! I cannot delete the tags" | echohl None
-                return
-            endif
-        endif
-         
-        if has("cscope")
-            silent! execute "cs kill -1"
-        endif
-         
-        if filereadable("cscope.files")
-            if(g:iswindows==1)
-                let csfilesdeleted=delete(dir."\\"."cscope.files")
-            else
-                let csfilesdeleted=delete("./"."cscope.files")
-            endif
-            if(csfilesdeleted!=0)
-                echohl WarningMsg | echo "Fail to do cscope! I cannot delete the cscope.files" | echohl None
-                return
-            endif
-        endif
-                                             
-        if filereadable("cscope.out")
-            if(g:iswindows==1)
-                let csoutdeleted=delete(dir."\\"."cscope.out")
-            else
-                let csoutdeleted=delete("./"."cscope.out")
-            endif
-            if(csoutdeleted!=0)
-                echohl WarningMsg | echo "Fail to do cscope! I cannot delete the cscope.out" | echohl None
-                return
-            endif
-        endif
-                                             
-        if(executable('ctags'))
-            "silent! execute "!ctags -R --c-types=+p --fields=+S *"
-            silent! execute "!ctags -R --c++-kinds=+p --fields=+iaS --extra=+q ."
-        endif
-             
-        if(executable('cscope') && has("cscope") )
-            if(g:iswindows!=1)
-                silent! execute "!find . -name '*.h' -o -name '*.c' -o -name '*.cpp' -o -name '*.java' -o -name '*.cs' > cscope.files"
-            else
-                silent! execute "!dir /s/b *.c,*.cpp,*.h,*.java,*.cs >> cscope.files"
-            endif
-            silent! execute "!cscope -b"
-            execute "normal :"
-                                                                     
-            if filereadable("cscope.out")
-                execute "cs add cscope.out"
-            endif
-        endif
-endfunction
+nmap <C-@>c :cs find c <C-R>=expand("<cword>")<CR><CR>
+nmap <C-@>t :cs find t <C-R>=expand("<cword>")<CR><CR>
+nmap <C-@>e :cs find e <C-R>=expand("<cword>")<CR><CR>
+nmap <C-@>f :cs find f <C-R>=expand("<cfile>")<CR><CR>
+nmap <C-@>i :cs find i ^<C-R>=expand("<cfile>")<CR>$<CR>
+nmap <C-@>d :cs find d <C-R>=expand("<cword>")<CR><CR>
+
  
 "设置默认shell
 set shell=bash
@@ -168,3 +192,5 @@ set incsearch
 set noerrorbells
 set novisualbell
 set t_vb=
+
+
