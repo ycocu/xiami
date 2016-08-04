@@ -1,0 +1,4 @@
+FROM        ubuntu:14.04
+RUN         sed -e 's/\/\/archive/\/\/cn.archive/g' /etc/apt/sources.list > /etc/apt/sources.list.cn
+RUN         cp -f /etc/apt/sources.list.cn /etc/apt/sources.list
+RUN         apt-get update && apt-get install -y vim
